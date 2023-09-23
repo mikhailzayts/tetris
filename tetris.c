@@ -1,39 +1,47 @@
 /**
-*  @file   tetris.h
-*  @brief  Terminal-based Tetris video game
-*
-*  @author Mikhail Zaytsev
-*  @date   20230825
-*/
+ *  @file   tetris.h
+ *  @brief  Terminal-based Tetris video game
+ *
+ *  @author Mikhail Zaytsev
+ *  @date   20230825
+ */
+
 
 /** Includes */
 
+#include <ncurses.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
-#include <ncurses.h>
 
 /** Definitions */
 
-#define CONFIG_KEY_MOVE_LEFT    'h'
-#define CONFIG_KEY_MOVE_RIGHT   'l'
-#define CONFIG_KEY_ROTATE_LEFT  'u'
-#define CONFIG_KEY_ROTATE_RIGHT 'i'
-#define CONFIG_KEY_FALL         'j'
+#if 0
+#define A
+#else
+#define B
+#endif
 
-#define CUP_HEIGHT          20
-#define CUP_WIDTH           10
+#define CONFIG_KEY_MOVE_LEFT    'h' /**< Key for moving figure left */
+#define CONFIG_KEY_MOVE_RIGHT   'l' /**< Key for moving figure right */
+#define CONFIG_KEY_ROTATE_LEFT  'u' /**< Key for rotating figure left */
+#define CONFIG_KEY_ROTATE_RIGHT 'i' /**< Key for rotating figure right */
+#define CONFIG_KEY_FALL         'j' /**< Key for figure fall */
+#define CONFIG_KEY_SPEEDUP      'k' /**< Key for speed up the figure */
 
-#define GAME_FPS            30
-#define GAME_FALL_SPEED     7
-#define GAME_SECOND_IN_MS   1000
+#define CUP_HEIGHT 20 /**< Cup height */
+#define CUP_WIDTH  10 /**< Cup width */
 
-#define TILE_SPACE      "  "
-#define TILE_FILLED     "[]"
+#define GAME_FPS          30
+#define GAME_FALL_PERIOD  15
+#define GAME_SECOND_IN_MS 1000
 
-#define FIGURE_SIZE         4
-#define FIGURE_QTY          7
+#define TILE_SPACE  "  "
+#define TILE_FILLED "[]"
+
+#define FIGURE_SIZE 4
+#define FIGURE_QTY  7
 
 #define PRINTW_COLOR(color, ...) \
     do \
@@ -52,16 +60,13 @@
     } while (0)
 
 #define TILE_IS_FILLED(tile) \
-    ((TILE_NUM_SPACE != (tile)) && \
-    (TILE_NUM_SHADOW != (tile)))
+    ((TILE_NUM_SPACE != (tile)) && (TILE_NUM_SHADOW != (tile)))
 
 #define POINT_IS_IN_CUP(point) \
-    ((0 > (point).x) || \
-    (0 > (point).y) || \
-    ((CUP_WIDTH - 1) < (point).x) || \
-    ((CUP_HEIGHT - 1) < (point).y)) 
+    ((0 > (point).x) || (0 > (point).y) || ((CUP_WIDTH - 1) < (point).x) \
+     || ((CUP_HEIGHT - 1) < (point).y))
 
-/** Structures and types */
+/** structures and types */
 
 typedef struct point_s
 {
@@ -71,9 +76,7 @@ typedef struct point_s
 
 typedef enum tile_num_e
 {
-    TILE_NUM_SPACE = 0,
-
-    TILE_NUM_SQUARE,
+    TILE_NUM_SQUARE = 0,
     TILE_NUM_STICK,
     TILE_NUM_S,
     TILE_NUM_Z,
@@ -81,106 +84,106 @@ typedef enum tile_num_e
     TILE_NUM_J,
     TILE_NUM_T,
 
-    TILE_NUM_SHADOW
+    TILE_NUM_SHADOW,
+    TILE_NUM_SPACE
 } tile_num_e;
 
 typedef struct figure_s
 {
-    point_s points[FIGURE_SIZE];
+    point_s    points[FIGURE_SIZE];
     tile_num_e num;
 } figure_s;
 
 typedef struct game_ctx_s
 {
-    figure_s figure;
+    figure_s   figure;
     tile_num_e next;
-    point_s offset;
-    int score;
-    char * p_cup[CUP_HEIGHT];
+    point_s    offset;
+    int        score;
+    char *     p_cup[CUP_HEIGHT];
 } game_ctx_s;
 
+/** private data */
 
-/** Private data */
-
-static figure_s g_figure_list[FIGURE_QTY] =
-{
+static figure_s g_figure_list[FIGURE_QTY] = {
     /* Square */
-    (figure_s){(point_s){.x = 0, .y = 0}, (point_s){.x = 0, .y = 1}, 
-                (point_s){.x = 1, .y = 0}, (point_s){.x = 1, .y = 1}, 
-                .num = TILE_NUM_SQUARE},
+    (figure_s){(point_s){.x = 0, .y = 0}, (point_s){.x = 0, .y = 1},
+               (point_s){.x = 1, .y = 0}, (point_s){.x = 1, .y = 1},
+               .num = TILE_NUM_SQUARE},
     /* Stick */
-    (figure_s){(point_s){.x = -1, .y = 0}, (point_s){.x = 0, .y = 0}, 
-                (point_s){.x = 1, .y = 0}, (point_s){.x = 2, .y = 0},
-                .num = TILE_NUM_STICK},
+    (figure_s){(point_s){.x = -1, .y = 0}, (point_s){.x = 0, .y = 0},
+               (point_s){.x = 1, .y = 0}, (point_s){.x = 2, .y = 0},
+               .num = TILE_NUM_STICK},
     /* S */
-    (figure_s){(point_s){.x = -1, .y = -1}, (point_s){.x = 0, .y = -1}, 
-                (point_s){.x = 0, .y = 0}, (point_s){.x = 1, .y = 0},
-                .num = TILE_NUM_S},
+    (figure_s){(point_s){.x = -1, .y = 0}, (point_s){.x = 0, .y = 0},
+               (point_s){.x = 0, .y = -1}, (point_s){.x = 1, .y = -1},
+               .num = TILE_NUM_S},
     /* Z */
-    (figure_s){(point_s){.x = -1, .y = 0}, (point_s){.x = 0, .y = 0}, 
-                (point_s){.x = 0, .y = -1}, (point_s){.x = 1, .y = -1},
-                .num = TILE_NUM_Z},
+    (figure_s){(point_s){.x = -1, .y = -1}, (point_s){.x = 0, .y = -1},
+               (point_s){.x = 0, .y = 0}, (point_s){.x = 1, .y = 0},
+               .num = TILE_NUM_Z},
     /* L */
-    (figure_s){(point_s){.x = 0, .y = 1}, (point_s){.x = 0, .y = 0}, 
-                (point_s){.x = 0, .y = -1}, (point_s){.x = 1, .y = -1},
-                .num = TILE_NUM_L},
+    (figure_s){(point_s){.x = 0, .y = 1}, (point_s){.x = 0, .y = 0},
+               (point_s){.x = 0, .y = -1}, (point_s){.x = -1, .y = -1},
+               .num = TILE_NUM_L},
     /* J */
-    (figure_s){(point_s){.x = 0, .y = 1}, (point_s){.x = 0, .y = 0}, 
-                (point_s){.x = 0, .y = -1}, (point_s){.x = -1, .y = -1},
-                .num = TILE_NUM_J},
+    (figure_s){(point_s){.x = 0, .y = 1}, (point_s){.x = 0, .y = 0},
+               (point_s){.x = 0, .y = -1}, (point_s){.x = 1, .y = -1},
+               .num = TILE_NUM_J},
     /* T */
-    (figure_s){(point_s){.x = -1, .y = 0}, (point_s){.x = 0, .y = 0}, 
-                (point_s){.x = 1, .y = 0}, (point_s){.x = 0, .y = 1},
-                .num = TILE_NUM_T},
+    (figure_s){(point_s){.x = -1, .y = 0}, (point_s){.x = 0, .y = 0},
+               (point_s){.x = 1, .y = 0}, (point_s){.x = 0, .y = 1},
+               .num = TILE_NUM_T},
 };
 
 static game_ctx_s g_ctx;
 
-/** Private functions prototypes */
+/** private functions prototypes */
 
-static void game_start(void);
-static void game_loop(void);
-static bool game_is_over(void);
-static void game_over(void);
+static void game_start (void);
+static void game_loop (void);
+static bool game_is_over (void);
+static void game_over (void);
 
-static void window_create(void);
-static void window_refresh(void);
-static void window_destroy(void);
+static void window_create (void);
+static void window_refresh (void);
+static void window_destroy (void);
 
-static void cup_create(void);
-static void cup_destroy(void);
-static void cup_legend(void);
-static void cup_bottom(void);
-static void cup_process(void);
-static bool cup_tile_process(int x, int y);
-static void cup_line_delete(int num);
-static bool cup_is_game_over(void);
+static void cup_create (void);
+static void cup_destroy (void);
+static void cup_legend (void);
+static void cup_bottom (void);
+static void cup_process (void);
+static bool cup_tile_process (int x, int y);
+static void cup_line_delete (int num);
+static bool cup_is_game_over (void);
 
-static bool point_coll_check(const point_s * p_point);
-static void point_print(const point_s * p_point, char ch);
+static bool point_coll_check (const point_s * p_point);
+static void point_print (const point_s * p_point, char ch);
 
-static void figure_spawn(void);
-static void figure_off_add(const point_s * p_offset);
-static bool figure_coll_check(const point_s * p_point);
-static bool figure_cup_check(void);
+static void   figure_spawn (void);
+static void   figure_off_add (const point_s * p_offset);
+static bool   figure_coll_check (const point_s * p_point);
+static bool   figure_cup_check (void);
+static char * figure_next_get (void);
 
-static void figure_operate(char key);
-static bool figure_fall(void);
-static bool figure_move_left(void);
-static bool figure_move_right(void);
-static bool figure_rotate_left(void);
-static bool figure_rotate_right(void);
+static void figure_operate (char key);
+static bool figure_fall (void);
+static bool figure_move_left (void);
+static bool figure_move_right (void);
+static bool figure_rotate_left (void);
+static bool figure_rotate_right (void);
 
-static void figure_print(void);
-static void figure_shadow_print(void);
+static void figure_print (void);
+static void figure_shadow_print (void);
 
-/** Public functions */
+/** public functions */
 
 /**
-*  @brief      Game entry point
-*
-*  @return     int   Error code
-*/
+ *  @brief      game entry point
+ *
+ *  @return     int   error code
+ */
 int main(void)
 {
     game_start();
@@ -193,7 +196,7 @@ int main(void)
     return 0;
 }
 
-/** Private functions */
+/** private functions */
 
 static void game_start(void)
 {
@@ -204,7 +207,7 @@ static void game_start(void)
 
 static void game_loop(void)
 {
-    static int frame = 0;
+    static int  frame     = 0;
     static bool is_fallen = false;
     figure_operate(getch());
 
@@ -219,7 +222,7 @@ static void game_loop(void)
     window_refresh();
     timeout(GAME_SECOND_IN_MS / GAME_FPS);
 
-    if (0 == (frame % GAME_FALL_SPEED))
+    if (0 == (frame % GAME_FALL_PERIOD))
     {
         is_fallen = !figure_fall();
     }
@@ -231,13 +234,18 @@ static bool game_is_over(void)
     return cup_is_game_over();
 }
 
+/**
+ *  @brief      Game over
+ *
+ *  @return     void   Nothing
+ */
 static void game_over(void)
 {
     cup_destroy();
     erase();
     attron(A_BOLD);
-    mvprintw(0, 0, "\nGame over!\n");
-    printw("Your score: %d\n", g_ctx.score);
+    mvprintw(0, 0, "\ngame over!\n");
+    printw("your score: %d\n", g_ctx.score);
     attroff(A_BOLD);
 
     window_refresh();
@@ -250,18 +258,23 @@ static void window_create(void)
     WINDOW * p_window = initscr();
     cbreak();
     noecho();
-    nodelay(p_window, TRUE);
+    nodelay(p_window, true);
+
+    /** TODO: remove after debugging */
+    // box(p_window, 0, 21);
+
     if (true == has_colors())
     {
-       start_color();
-       init_pair(TILE_NUM_SQUARE, COLOR_YELLOW, COLOR_BLACK);
-       init_pair(TILE_NUM_STICK, COLOR_CYAN, COLOR_BLACK);
-       init_pair(TILE_NUM_S, COLOR_GREEN, COLOR_BLACK);
-       init_pair(TILE_NUM_Z, COLOR_RED, COLOR_BLACK);
-       init_pair(TILE_NUM_L, COLOR_YELLOW, COLOR_BLACK);
-       init_pair(TILE_NUM_J, COLOR_BLUE, COLOR_BLACK);
-       init_pair(TILE_NUM_T, COLOR_MAGENTA, COLOR_BLACK);
-       init_pair(TILE_NUM_SHADOW, COLOR_WHITE, COLOR_BLACK);
+        start_color();
+        init_pair(TILE_NUM_SQUARE, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(TILE_NUM_STICK, COLOR_CYAN, COLOR_BLACK);
+        init_pair(TILE_NUM_S, COLOR_GREEN, COLOR_BLACK);
+        init_pair(TILE_NUM_Z, COLOR_RED, COLOR_BLACK);
+        init_pair(TILE_NUM_L, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(TILE_NUM_J, COLOR_BLUE, COLOR_BLACK);
+        init_pair(TILE_NUM_T, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(TILE_NUM_SHADOW, COLOR_WHITE, COLOR_BLACK);
+        bkgd(COLOR_PAIR(TILE_NUM_SHADOW));
     }
 }
 
@@ -277,7 +290,7 @@ static void window_destroy(void)
 
 static void cup_create(void)
 {
-    for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++) 
+    for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++)
     {
         g_ctx.p_cup[h_idx] = malloc(sizeof(char) * CUP_WIDTH);
         memset(g_ctx.p_cup[h_idx], TILE_NUM_SPACE, sizeof(char) * CUP_WIDTH);
@@ -286,7 +299,7 @@ static void cup_create(void)
 
 static void cup_destroy(void)
 {
-    for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++) 
+    for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++)
     {
         free(g_ctx.p_cup[h_idx]);
     }
@@ -295,8 +308,8 @@ static void cup_destroy(void)
 static void cup_legend(void)
 {
     attron(A_BOLD);
-    mvprintw(0, 0, "\nScore: %d\n", g_ctx.score);
-    printw("Next: %d\n\n", g_ctx.next);
+    mvprintw(0, 0, "\nscore: %d\n", g_ctx.score);
+    printw("next: %d - %s\n\n", g_ctx.next, figure_next_get());
     attroff(A_BOLD);
 }
 
@@ -313,10 +326,10 @@ static void cup_process(void)
 
     cup_legend();
     cup_bottom();
-    for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++) 
+    for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++)
     {
         bool is_line = true;
-        for (int w_idx = 0; w_idx < CUP_WIDTH; w_idx++) 
+        for (int w_idx = 0; w_idx < CUP_WIDTH; w_idx++)
         {
             if (false == cup_tile_process(w_idx, h_idx))
             {
@@ -336,7 +349,6 @@ static void cup_process(void)
 
 static bool cup_tile_process(int x, int y)
 {
-    /** NOTE: It is not a bug */
     const point_s tmp = {.x = x, .y = y};
     if (true == figure_coll_check(&tmp))
     {
@@ -358,7 +370,7 @@ static bool cup_tile_process(int x, int y)
 
             default:
                 PRINTW_COLOR_BOLD(g_ctx.p_cup[y][x], TILE_FILLED);
-            break;
+                break;
         }
     }
     return true;
@@ -366,8 +378,7 @@ static bool cup_tile_process(int x, int y)
 
 static void cup_line_delete(int num)
 {
-    if ((0 > num) ||
-        ((CUP_HEIGHT - 1) < num))
+    if ((0 > num) || ((CUP_HEIGHT - 1) < num))
     {
         return;
     }
@@ -385,7 +396,7 @@ static void cup_line_delete(int num)
 
 static bool cup_is_game_over(void)
 {
-    for (int w_idx = 0; w_idx < CUP_WIDTH; w_idx++) 
+    for (int w_idx = 0; w_idx < CUP_WIDTH; w_idx++)
     {
         if (TILE_IS_FILLED(g_ctx.p_cup[0][w_idx]))
         {
@@ -402,8 +413,8 @@ static bool point_coll_check(const point_s * p_point)
         return false;
     }
 
-    return (POINT_IS_IN_CUP(*p_point) ||
-        (TILE_IS_FILLED(g_ctx.p_cup[p_point->y][p_point->x])));
+    return (POINT_IS_IN_CUP(*p_point)
+            || (TILE_IS_FILLED(g_ctx.p_cup[p_point->y][p_point->x])));
 }
 
 static void point_print(const point_s * p_point, char ch)
@@ -418,10 +429,10 @@ static void point_print(const point_s * p_point, char ch)
 
 static void figure_spawn(void)
 {
-    g_ctx.offset = (point_s){.x = 0, .y = 0};
+    g_ctx.offset         = (point_s){.x = 0, .y = 0};
     const point_s offset = {.x = CUP_WIDTH / 2, .y = 1};
-    g_ctx.figure = g_figure_list[g_ctx.next];
-    g_ctx.next = arc4random() % FIGURE_QTY;
+    g_ctx.figure         = g_figure_list[g_ctx.next];
+    g_ctx.next           = arc4random() % FIGURE_QTY;
     figure_off_add(&offset);
 }
 
@@ -445,8 +456,8 @@ static bool figure_coll_check(const point_s * p_point)
 
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
-        if ((p_point->x == (g_ctx.figure.points[idx].x + g_ctx.offset.x)) && 
-            (p_point->y == (g_ctx.figure.points[idx].y + g_ctx.offset.y)))
+        if ((p_point->x == (g_ctx.figure.points[idx].x + g_ctx.offset.x))
+            && (p_point->y == (g_ctx.figure.points[idx].y + g_ctx.offset.y)))
         {
             return true;
         }
@@ -458,12 +469,10 @@ static bool figure_cup_check(void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
-        const point_s tmp_point = 
-        {
-            .x = g_ctx.figure.points[idx].x + g_ctx.offset.x,
-            .y = g_ctx.figure.points[idx].y + g_ctx.offset.y
-        };
-        
+        const point_s tmp_point
+            = {.x = g_ctx.figure.points[idx].x + g_ctx.offset.x,
+               .y = g_ctx.figure.points[idx].y + g_ctx.offset.y};
+
         if (true == point_coll_check(&tmp_point))
         {
             return true;
@@ -472,32 +481,62 @@ static bool figure_cup_check(void)
     return false;
 }
 
+static char * figure_next_get(void)
+{
+    switch (g_ctx.next)
+    {
+        case TILE_NUM_SQUARE:
+            return "Square";
+        case TILE_NUM_STICK:
+            return "Stick";
+        case TILE_NUM_S:
+            return "S";
+        case TILE_NUM_Z:
+            return "Z";
+        case TILE_NUM_L:
+            return "L";
+        case TILE_NUM_J:
+            return "J";
+        case TILE_NUM_T:
+            return "T";
+        case TILE_NUM_SHADOW:
+            return "Shadow";
+        default:
+            return "";
+    }
+}
+
 static void figure_operate(char key)
 {
     switch (key)
     {
         case CONFIG_KEY_FALL:
-            while (true == figure_fall());
-        break;
+            while (true == figure_fall())
+                ;
+            break;
 
         case CONFIG_KEY_MOVE_LEFT:
             figure_move_left();
-        break;
+            break;
 
         case CONFIG_KEY_MOVE_RIGHT:
             figure_move_right();
-        break;
+            break;
 
         case CONFIG_KEY_ROTATE_LEFT:
             figure_rotate_left();
-        break;
+            break;
 
         case CONFIG_KEY_ROTATE_RIGHT:
             figure_rotate_right();
-        break;
+            break;
+
+        case CONFIG_KEY_SPEEDUP:
+            figure_fall();
+            break;
 
         default:
-        break;
+            break;
     }
 }
 
@@ -538,7 +577,7 @@ static bool figure_rotate_left(void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
-        int tmp= -g_ctx.figure.points[idx].x;
+        int tmp                    = -g_ctx.figure.points[idx].x;
         g_ctx.figure.points[idx].x = g_ctx.figure.points[idx].y;
         g_ctx.figure.points[idx].y = tmp;
     }
@@ -554,7 +593,7 @@ static bool figure_rotate_right(void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
-        int tmp= -g_ctx.figure.points[idx].y;
+        int tmp                    = -g_ctx.figure.points[idx].y;
         g_ctx.figure.points[idx].y = g_ctx.figure.points[idx].x;
         g_ctx.figure.points[idx].x = tmp;
     }
@@ -570,25 +609,24 @@ static void figure_print(void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
-        const point_s tmp_point = 
-        {
-            .x = g_ctx.figure.points[idx].x + g_ctx.offset.x,
-            .y = g_ctx.figure.points[idx].y + g_ctx.offset.y
-        };
+        const point_s tmp_point
+            = {.x = g_ctx.figure.points[idx].x + g_ctx.offset.x,
+               .y = g_ctx.figure.points[idx].y + g_ctx.offset.y};
         point_print(&tmp_point, g_ctx.figure.num);
     }
 }
 
 static void figure_shadow_print(void)
 {
-    point_s orig_offset = g_ctx.offset;
-    tile_num_e orig_num = g_ctx.figure.num;
+    point_s    orig_offset = g_ctx.offset;
+    tile_num_e orig_num    = g_ctx.figure.num;
 
     g_ctx.figure.num = TILE_NUM_SHADOW;
 
-    while (true == figure_fall());
+    while (true == figure_fall())
+        ;
     figure_print();
 
-    g_ctx.offset = orig_offset;
+    g_ctx.offset     = orig_offset;
     g_ctx.figure.num = orig_num;
 }
