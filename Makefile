@@ -116,6 +116,43 @@ depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
+#=============================================================================
+# Target rules for targets named tetris
+
+# Build rule for target.
+tetris: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tetris
+.PHONY : tetris
+
+# fast build rule for target.
+tetris/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tetris.dir/build.make CMakeFiles/tetris.dir/build
+.PHONY : tetris/fast
+
+tetris.o: tetris.c.o
+.PHONY : tetris.o
+
+# target to build an object file
+tetris.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tetris.dir/build.make CMakeFiles/tetris.dir/tetris.c.o
+.PHONY : tetris.c.o
+
+tetris.i: tetris.c.i
+.PHONY : tetris.i
+
+# target to preprocess a source file
+tetris.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tetris.dir/build.make CMakeFiles/tetris.dir/tetris.c.i
+.PHONY : tetris.c.i
+
+tetris.s: tetris.c.s
+.PHONY : tetris.s
+
+# target to generate assembly for a file
+tetris.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tetris.dir/build.make CMakeFiles/tetris.dir/tetris.c.s
+.PHONY : tetris.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -124,6 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... tetris"
+	@echo "... tetris.o"
+	@echo "... tetris.i"
+	@echo "... tetris.s"
 .PHONY : help
 
 

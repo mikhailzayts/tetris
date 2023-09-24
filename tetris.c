@@ -6,7 +6,6 @@
  *  @date   20230825
  */
 
-
 /** Includes */
 
 #include <ncurses.h>
@@ -16,12 +15,6 @@
 #include <string.h>
 
 /** Definitions */
-
-#if 0
-#define A
-#else
-#define B
-#endif
 
 #define CONFIG_KEY_MOVE_LEFT    'h' /**< Key for moving figure left */
 #define CONFIG_KEY_MOVE_RIGHT   'l' /**< Key for moving figure right */
@@ -154,12 +147,12 @@ static void cup_destroy (void);
 static void cup_legend (void);
 static void cup_bottom (void);
 static void cup_process (void);
-static bool cup_tile_process (int x, int y);
+static bool cup_tile_process (int x_coord, int y_coord);
 static void cup_line_delete (int num);
 static bool cup_is_game_over (void);
 
 static bool point_coll_check (const point_s * p_point);
-static void point_print (const point_s * p_point, char ch);
+static void point_print (const point_s * p_point, char tile);
 
 static void   figure_spawn (void);
 static void   figure_off_add (const point_s * p_offset);
@@ -184,7 +177,7 @@ static void figure_shadow_print (void);
  *
  *  @return     int   error code
  */
-int main(void)
+int main (void)
 {
     game_start();
     while (false == game_is_over())
@@ -198,14 +191,14 @@ int main(void)
 
 /** private functions */
 
-static void game_start(void)
+static void game_start (void)
 {
     window_create();
     cup_create();
     figure_spawn();
 }
 
-static void game_loop(void)
+static void game_loop (void)
 {
     static int  frame     = 0;
     static bool is_fallen = false;
@@ -229,7 +222,7 @@ static void game_loop(void)
     frame++;
 }
 
-static bool game_is_over(void)
+static bool game_is_over (void)
 {
     return cup_is_game_over();
 }
@@ -239,7 +232,7 @@ static bool game_is_over(void)
  *
  *  @return     void   Nothing
  */
-static void game_over(void)
+static void game_over (void)
 {
     cup_destroy();
     erase();
@@ -253,7 +246,7 @@ static void game_over(void)
     window_destroy();
 }
 
-static void window_create(void)
+static void window_create (void)
 {
     WINDOW * p_window = initscr();
     cbreak();
@@ -278,17 +271,17 @@ static void window_create(void)
     }
 }
 
-static void window_refresh(void)
+static void window_refresh (void)
 {
     refresh();
 }
 
-static void window_destroy(void)
+static void window_destroy (void)
 {
     endwin();
 }
 
-static void cup_create(void)
+static void cup_create (void)
 {
     for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++)
     {
@@ -297,7 +290,7 @@ static void cup_create(void)
     }
 }
 
-static void cup_destroy(void)
+static void cup_destroy (void)
 {
     for (int h_idx = 0; h_idx < CUP_HEIGHT; h_idx++)
     {
@@ -305,7 +298,7 @@ static void cup_destroy(void)
     }
 }
 
-static void cup_legend(void)
+static void cup_legend (void)
 {
     attron(A_BOLD);
     mvprintw(0, 0, "\nscore: %d\n", g_ctx.score);
@@ -313,14 +306,14 @@ static void cup_legend(void)
     attroff(A_BOLD);
 }
 
-static void cup_bottom(void)
+static void cup_bottom (void)
 {
     attron(A_BOLD);
     printw("+====================+\n");
     attroff(A_BOLD);
 }
 
-static void cup_process(void)
+static void cup_process (void)
 {
     int lines = 0;
 
@@ -347,36 +340,34 @@ static void cup_process(void)
     g_ctx.score += lines * lines;
 }
 
-static bool cup_tile_process(int x, int y)
+static bool cup_tile_process (int x_coord, int y_coord)
 {
-    const point_s tmp = {.x = x, .y = y};
+    const point_s tmp = {.x = x_coord, .y = y_coord};
     if (true == figure_coll_check(&tmp))
     {
         PRINTW_COLOR_BOLD(g_ctx.figure.num, "[]");
         return false;
     }
-    else
+
+    switch (g_ctx.p_cup[y_coord][x_coord])
     {
-        switch (g_ctx.p_cup[y][x])
-        {
-            case TILE_NUM_SHADOW:
-                PRINTW_COLOR(0, TILE_FILLED);
-                g_ctx.p_cup[y][x] = TILE_NUM_SPACE;
-                return false;
+        case TILE_NUM_SHADOW:
+            PRINTW_COLOR(0, TILE_FILLED);
+            g_ctx.p_cup[y_coord][x_coord] = TILE_NUM_SPACE;
+            return false;
 
-            case TILE_NUM_SPACE:
-                printw(TILE_SPACE);
-                return false;
+        case TILE_NUM_SPACE:
+            printw(TILE_SPACE);
+            return false;
 
-            default:
-                PRINTW_COLOR_BOLD(g_ctx.p_cup[y][x], TILE_FILLED);
-                break;
-        }
+        default:
+            PRINTW_COLOR_BOLD(g_ctx.p_cup[y_coord][x_coord], TILE_FILLED);
+            break;
     }
     return true;
 }
 
-static void cup_line_delete(int num)
+static void cup_line_delete (int num)
 {
     if ((0 > num) || ((CUP_HEIGHT - 1) < num))
     {
@@ -394,7 +385,7 @@ static void cup_line_delete(int num)
     memset(g_ctx.p_cup[0], TILE_NUM_SPACE, sizeof(char) * CUP_WIDTH);
 }
 
-static bool cup_is_game_over(void)
+static bool cup_is_game_over (void)
 {
     for (int w_idx = 0; w_idx < CUP_WIDTH; w_idx++)
     {
@@ -406,7 +397,7 @@ static bool cup_is_game_over(void)
     return false;
 }
 
-static bool point_coll_check(const point_s * p_point)
+static bool point_coll_check (const point_s * p_point)
 {
     if (NULL == p_point)
     {
@@ -417,17 +408,17 @@ static bool point_coll_check(const point_s * p_point)
             || (TILE_IS_FILLED(g_ctx.p_cup[p_point->y][p_point->x])));
 }
 
-static void point_print(const point_s * p_point, char ch)
+static void point_print (const point_s * p_point, char tile)
 {
     if (NULL == p_point)
     {
         return;
     }
 
-    g_ctx.p_cup[p_point->y][p_point->x] = ch;
+    g_ctx.p_cup[p_point->y][p_point->x] = tile;
 }
 
-static void figure_spawn(void)
+static void figure_spawn (void)
 {
     g_ctx.offset         = (point_s){.x = 0, .y = 0};
     const point_s offset = {.x = CUP_WIDTH / 2, .y = 1};
@@ -436,7 +427,7 @@ static void figure_spawn(void)
     figure_off_add(&offset);
 }
 
-static void figure_off_add(const point_s * p_offset)
+static void figure_off_add (const point_s * p_offset)
 {
     if (NULL == p_offset)
     {
@@ -447,7 +438,7 @@ static void figure_off_add(const point_s * p_offset)
     g_ctx.offset.y += p_offset->y;
 }
 
-static bool figure_coll_check(const point_s * p_point)
+static bool figure_coll_check (const point_s * p_point)
 {
     if (NULL == p_point)
     {
@@ -465,7 +456,7 @@ static bool figure_coll_check(const point_s * p_point)
     return false;
 }
 
-static bool figure_cup_check(void)
+static bool figure_cup_check (void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
@@ -481,7 +472,7 @@ static bool figure_cup_check(void)
     return false;
 }
 
-static char * figure_next_get(void)
+static char * figure_next_get (void)
 {
     switch (g_ctx.next)
     {
@@ -506,13 +497,15 @@ static char * figure_next_get(void)
     }
 }
 
-static void figure_operate(char key)
+static void figure_operate (char key)
 {
     switch (key)
     {
         case CONFIG_KEY_FALL:
             while (true == figure_fall())
-                ;
+            {
+                /** Do nothing */
+            }
             break;
 
         case CONFIG_KEY_MOVE_LEFT:
@@ -540,7 +533,7 @@ static void figure_operate(char key)
     }
 }
 
-static bool figure_fall(void)
+static bool figure_fall (void)
 {
     figure_off_add(&(const point_s){.x = 0, .y = 1});
     if (true == figure_cup_check())
@@ -551,7 +544,7 @@ static bool figure_fall(void)
     return true;
 }
 
-static bool figure_move_left(void)
+static bool figure_move_left (void)
 {
     figure_off_add(&(const point_s){.x = -1, .y = 0});
     if (true == figure_cup_check())
@@ -562,7 +555,7 @@ static bool figure_move_left(void)
     return true;
 }
 
-static bool figure_move_right(void)
+static bool figure_move_right (void)
 {
     figure_off_add(&(const point_s){.x = 1, .y = 0});
     if (true == figure_cup_check())
@@ -573,7 +566,7 @@ static bool figure_move_right(void)
     return true;
 }
 
-static bool figure_rotate_left(void)
+static bool figure_rotate_left (void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
@@ -589,7 +582,7 @@ static bool figure_rotate_left(void)
     return true;
 }
 
-static bool figure_rotate_right(void)
+static bool figure_rotate_right (void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
@@ -605,7 +598,7 @@ static bool figure_rotate_right(void)
     return true;
 }
 
-static void figure_print(void)
+static void figure_print (void)
 {
     for (int idx = 0; idx < FIGURE_SIZE; idx++)
     {
@@ -616,7 +609,7 @@ static void figure_print(void)
     }
 }
 
-static void figure_shadow_print(void)
+static void figure_shadow_print (void)
 {
     point_s    orig_offset = g_ctx.offset;
     tile_num_e orig_num    = g_ctx.figure.num;
@@ -624,7 +617,10 @@ static void figure_shadow_print(void)
     g_ctx.figure.num = TILE_NUM_SHADOW;
 
     while (true == figure_fall())
-        ;
+    {
+        /** Do nothing */
+    }
+
     figure_print();
 
     g_ctx.offset     = orig_offset;
