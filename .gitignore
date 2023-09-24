@@ -61,5 +61,10 @@ compile_commands.json
 # Build directory
 /*build*/
 
+# CMake
+CMakeCache.txt
+CMakeFiles/
+*.cmake
+
 # macOS specific
 .DS_Store
