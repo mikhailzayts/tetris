@@ -1,6 +1,6 @@
 # tetris
 
-Terminal-bases Tetris video game
+Terminal-based Tetris video game
 
 ## Build
 
